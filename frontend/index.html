@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Garbage Monitoring Dashboard | Smart Waste Management</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+
+<body>
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="logo">
+            <i class="fas fa-trash-alt"></i>
+            <span>Waste<span>Monitor</span></span>
+        </div>
+        <nav class="nav-menu">
+            <a href="#" class="nav-item active" data-page="dashboard">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" data-page="real-time">
+                <i class="fas fa-chart-line"></i>
+                <span>Real-Time</span>
+            </a>
+            <a href="#" class="nav-item" data-page="analytics">
+                <i class="fas fa-chart-bar"></i>
+                <span>Analytics</span>
+            </a>
+            <!-- <a href="#" class="nav-item" data-page="predictions">
+                <i class="fas fa-microchip"></i>
+                <span>Predictions</span>
+            </a> -->
+            <!-- Add this in the nav-menu div -->
+            <a href="#" class="nav-item" data-page="route-optimization">
+                <i class="fas fa-route"></i>
+                <span>Route Optimizer</span>
+            </a>
+            <a href="#" class="nav-item" data-page="history">
+                <i class="fas fa-history"></i>
+                <span>History</span>
+            </a>
+            <a href="#" class="nav-item" data-page="settings">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sensor-status">
+                <i class="fas fa-circle online"></i>
+                <span>Sensor Online</span>
+            </div>
+            <div class="version">v2.0.0</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1 id="page-title">Dashboard</h1>
+                <p id="page-subtitle">Welcome back, Admin</p>
+            </div>
+            <div class="header-right">
+                <div class="notification-bell">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge" id="notification-count">0</span>
+                </div>
+                <div class="user-profile">
+                    <img src="https://ui-avatars.com/api/?name=Admin&background=2D9CDB&color=fff" alt="Admin">
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Page -->
+        <div id="dashboard-page" class="page active">
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon">
+                        <i class="fas fa-trash"></i>
+                    </div>
+                    <div class="kpi-info">
+                        <h3 id="total-readings">0</h3>
+                        <p>Total Readings</p>
+                    </div>
+                    <div class="kpi-trend positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+12%</span>
+                    </div>
+                </div>
+                <div class="kpi-card warning">
+                    <div class="kpi-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="kpi-info">
+                        <h3 id="warning-count">0</h3>
+                        <p>Warning Level</p>
+                    </div>
+                    <div class="kpi-trend negative">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+5%</span>
+                    </div>
+                </div>
+                <div class="kpi-card danger">
+                    <div class="kpi-icon">
+                        <i class="fas fa-biohazard"></i>
+                    </div>
+                    <div class="kpi-info">
+                        <h3 id="overflow-count">0</h3>
+                        <p>Overflow Alerts</p>
+                    </div>
+                    <div class="kpi-trend negative">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+8%</span>
+                    </div>
+                </div>
+                <div class="kpi-card success">
+                    <div class="kpi-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="kpi-info">
+                        <h3 id="avg-weight">0<span>kg</span></h3>
+                        <p>Average Weight</p>
+                    </div>
+                    <div class="kpi-trend positive">
+                        <i class="fas fa-arrow-down"></i>
+                        <span>-3%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="charts-row">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Hourly Weight Trends</h3>
+                        <select id="trend-period">
+                            <option value="24h">Last 24 Hours</option>
+                            <option value="7d">Last 7 Days</option>
+                            <option value="30d">Last 30 Days</option>
+                        </select>
+                    </div>
+                    <canvas id="weightTrendChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Overflow Status Distribution</h3>
+                        <i class="fas fa-info-circle" title="Distribution of bin statuses"></i>
+                    </div>
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Second Charts Row -->
+            <div class="charts-row">
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Weekday vs Weekend Comparison</h3>
+                    </div>
+                    <canvas id="weekendChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <h3>Critical Locations</h3>
+                    </div>
+                    <div id="critical-locations-list" class="locations-list">
+                        <div class="loading">Loading locations...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Alerts -->
+            <div class="alerts-section">
+                <div class="section-header">
+                    <h3><i class="fas fa-bell"></i> Recent Alerts</h3>
+                    <button class="btn-text" onclick="refreshAlerts()">Refresh</button>
+                </div>
+                <div id="alerts-list" class="alerts-list">
+                    <div class="loading">Loading alerts...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-Time Page -->
+        <div id="real-time-page" class="page">
+            <div class="real-time-header">
+                <h2>Real-Time Sensor Monitoring</h2>
+                <div class="live-badge">
+                    <i class="fas fa-circle"></i>
+                    <span>LIVE</span>
+                </div>
+            </div>
+            <div class="real-time-grid">
+                <div class="sensor-card">
+                    <div class="sensor-header">
+                        <i class="fas fa-microchip"></i>
+                        <h3>Sensor #001</h3>
+                        <span class="sensor-status online">Online</span>
+                    </div>
+                    <div class="sensor-data">
+                        <div class="data-item">
+                            <label>Weight</label>
+                            <div class="data-value" id="sensor-weight">--<span>kg</span></div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="weight-progress" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="data-item">
+                            <label>Distance</label>
+                            <div class="data-value" id="sensor-distance">--<span>cm</span></div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="distance-progress" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div class="data-item">
+                            <label>Status</label>
+                            <div class="status-badge" id="sensor-status">--</div>
+                        </div>
+                        <div class="data-item">
+                            <label>Last Update</label>
+                            <div class="data-value" id="sensor-time">--</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="prediction-panel">
+                    <h3>Make a Prediction</h3>
+                    <form id="prediction-form">
+                        <div class="form-group">
+                            <label>Hour (0-23)</label>
+                            <input type="number" id="pred-hour" min="0" max="23" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Weight (kg)</label>
+                            <input type="number" id="pred-weight" step="0.01" min="0" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Distance (cm)</label>
+                            <input type="number" id="pred-distance" step="0.01" min="0" max="100" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Weekend?</label>
+                            <select id="pred-weekend">
+                                <option value="0">No (Weekday)</option>
+                                <option value="1">Yes (Weekend)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-brain"></i> Predict
+                        </button>
+                    </form>
+                    <div id="prediction-result" class="prediction-result hidden">
+                        <div class="result-icon"></div>
+                        <div class="result-text"></div>
+                        <div class="result-confidence"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+<!-- Route Optimization Page with Visual Map -->
+<!-- Route Optimization Page with Visual Map -->
+<div id="route-optimization-page" class="page">
+    <div class="page-header">
+        <h2><i class="fas fa-map-marked-alt"></i> Smart Waste Collection Route Optimizer</h2>
+        <p>Interactive map with real-time vehicle tracking and ML-based priority routing</p>
+    </div>
+
+    <div class="route-optimization-container">
+        <!-- Left Panel - Bin Input -->
+        <div class="bin-input-panel">
+            <div class="panel-header">
+                <h3><i class="fas fa-dumpster"></i> Bin Configuration</h3>
+                <div class="bin-controls">
+                    <input type="number" id="num-bins" min="1" max="8" placeholder="# of bins" style="font-size: 16px; padding: 10px;">
+                    <button onclick="generateBinInputs()" class="btn-primary" style="padding: 10px 20px;">
+                        <i class="fas fa-plus"></i> Generate Bins
+                    </button>
+                </div>
+            </div>
+            
+            <div id="bin-inputs-container" class="bin-inputs-container" style="max-height: 500px; overflow-y: auto;">
+                <div class="info-message" style="text-align: center; padding: 50px;">
+                    <i class="fas fa-info-circle" style="font-size: 48px; color: var(--gray);"></i>
+                    <p style="margin-top: 15px; font-size: 16px;">Enter number of bins (1-8) to start route planning</p>
+                </div>
+            </div>
+            
+            <div class="action-buttons" style="display: flex; gap: 15px; margin-top: 20px;">
+                <button onclick="analyzeBins()" class="btn-primary" id="analyze-btn" disabled style="flex: 2; padding: 14px; font-size: 16px;">
+                    <i class="fas fa-chart-line"></i> Analyze & Optimize Route
+                </button>
+                <button onclick="resetBins()" class="btn-secondary" style="flex: 1; padding: 14px; font-size: 16px;">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+            </div>
+            
+            <!-- Collection Progress -->
+            <div id="collection-progress" class="collection-progress" style="display: none;">
+                <h4><i class="fas fa-tasks"></i> Collection Progress</h4>
+                <div class="progress-bar">
+                    <div id="collection-progress-bar" class="progress-fill" style="width: 0%"></div>
+                </div>
+                <div class="progress-stats">
+                    <span>📦 Collected: <strong id="collected-count">0</strong>/<span id="total-bins">0</span></span>
+                    <span>📏 Distance: <strong id="traveled-distance">0</strong> km</span>
+                    <span>⏱️ Time: <strong id="elapsed-time">0</strong> min</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Visual Map -->
+        <div class="results-panel">
+            <div class="panel-header">
+                <h3><i class="fas fa-map"></i> Route Map</h3>
+                <div class="algorithm-badge" id="algorithm-badge">🗺️ Dijkstra's Algorithm</div>
+            </div>
+            
+            <!-- Visual Map Canvas with Zoom Controls -->
+            <div class="visual-map-container" style="position: relative;">
+                <div class="map-zoom-controls">
+                    <button class="zoom-btn" onclick="zoomIn()" title="Zoom In">+</button>
+                    <button class="zoom-btn" onclick="zoomOut()" title="Zoom Out">-</button>
+                    <button class="zoom-btn" onclick="resetZoom()" title="Reset Zoom">⟳</button>
+                </div>
+                <canvas id="visualMapCanvas" width="800" height="650"></canvas>
+            </div>
+            
+            <!-- Route Legend -->
+            <div class="route-legend">
+                <div class="legend-item">
+                    <div class="legend-color critical"></div>
+                    <span>🔴 Critical (Overflow)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color warning"></div>
+                    <span>🟡 Warning</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color normal"></div>
+                    <span>🟢 Normal</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color depot"></div>
+                    <span>🏠 Depot</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color route"></div>
+                    <span>📍 Optimized Route</span>
+                </div>
+                <div class="legend-item">
+                    <i class="fas fa-truck" style="font-size: 20px;"></i>
+                    <span>🚛 Collection Vehicle</span>
+                </div>
+                <div class="legend-item">
+                    <i class="fas fa-check-circle" style="color: #00b894; font-size: 18px;"></i>
+                    <span>✓ Collected Bin</span>
+                </div>
+            </div>
+            
+            <!-- Route Details -->
+            <div id="route-details" class="route-details" style="display: none;">
+                <h4><i class="fas fa-list-ol"></i> Optimized Collection Order</h4>
+                <div id="route-steps-list" class="route-steps-list"></div>
+            </div>
+            
+            <!-- Animation Controls -->
+            <div class="animation-controls" id="animation-controls" style="display: none;">
+                <button onclick="startVisualSimulation()" class="btn-success" id="start-sim-btn">
+                    <i class="fas fa-play"></i> Start Collection
+                </button>
+                <button onclick="pauseSimulation()" class="btn-warning">
+                    <i class="fas fa-pause"></i> Pause
+                </button>
+                <button onclick="stopSimulation()" class="btn-danger">
+                    <i class="fas fa-stop"></i> Stop
+                </button>
+                <button onclick="resetSimulation()" class="btn-secondary">
+                    <i class="fas fa-sync-alt"></i> Reset
+                </button>
+                <div class="speed-control">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <input type="range" id="sim-speed" min="0.5" max="3" step="0.5" value="1">
+                    <span id="speed-label" style="font-weight: 600;">1x</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bin Detail Panel (Floating) -->
+<div id="binDetailPanel" class="bin-detail-panel">
+    <div class="panel-header">
+        <h4 id="detail-bin-name">Bin Details</h4>
+        <button onclick="closeBinDetail()" style="background: none; border: none; font-size: 20px; cursor: pointer;">✕</button>
+    </div>
+    <div id="detail-content"></div>
+</div>
+<!-- Bin Detail Panel (Floating) -->
+<div id="binDetailPanel" class="bin-detail-panel">
+    <div class="panel-header">
+        <h4 id="detail-bin-name">Bin Details</h4>
+        <button onclick="closeBinDetail()" style="background: none; border: none; cursor: pointer;">✕</button>
+    </div>
+    <div id="detail-content"></div>
+</div>
+        <!-- Analytics Page -->
+        <div id="analytics-page" class="page">
+            <div class="analytics-filters">
+                <div class="filter-group">
+                    <label>Date Range</label>
+                    <input type="date" id="start-date">
+                    <span>to</span>
+                    <input type="date" id="end-date">
+                </div>
+                <div class="filter-group">
+                    <label>Location</label>
+                    <select id="location-filter">
+                        <option value="all">All Locations</option>
+                        <option value="Downtown">Downtown</option>
+                        <option value="Suburb">Suburb</option>
+                        <option value="Industrial">Industrial</option>
+                    </select>
+                </div>
+                <button class="btn-secondary" onclick="refreshAnalytics()">
+                    <i class="fas fa-sync-alt"></i> Apply Filters
+                </button>
+                <button class="btn-outline" onclick="exportData()">
+                    <i class="fas fa-download"></i> Export CSV
+                </button>
+            </div>
+            <div class="analytics-grid">
+                <div class="chart-card full-width">
+                    <canvas id="analyticsTrendChart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <canvas id="heatmapChart"></canvas>
+                </div>
+                <div class="stats-card">
+                    <h3>Statistical Summary</h3>
+                    <div id="stats-summary" class="stats-content"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Page -->
+        <div id="history-page" class="page">
+            <div class="history-header">
+                <h3>Historical Data Records</h3>
+                <div class="history-controls">
+                    <input type="text" id="search-input" placeholder="Search records...">
+                    <select id="records-limit">
+                        <option value="20">20 per page</option>
+                        <option value="50">50 per page</option>
+                        <option value="100">100 per page</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="history-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Hour</th>
+                            <th>Weight (kg)</th>
+                            <th>Distance (cm)</th>
+                            <th>Weekend</th>
+                            <th>Status</th>
+                            <th>Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-tbody">
+                        <tr>
+                            <td colspan="7" class="loading">Loading data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+
+        <!-- Settings Page -->
+        <div id="settings-page" class="page">
+            <div class="settings-container">
+                <div class="settings-card">
+                    <h3><i class="fas fa-robot"></i> ML Model Settings</h3>
+                    <div class="setting-item">
+                        <label>Model Status</label>
+                        <span id="model-status" class="status-badge success">Loaded</span>
+                    </div>
+                    <div class="setting-item">
+                        <label>Auto-Retrain</label>
+                        <label class="switch">
+                            <input type="checkbox" id="auto-retrain">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>Retrain Schedule</label>
+                        <select id="retrain-schedule">
+                            <option value="daily">Daily</option>
+                            <option value="weekly">Weekly</option>
+                            <option value="monthly">Monthly</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" onclick="triggerRetrain()">
+                        <i class="fas fa-sync-alt"></i> Retrain Now
+                    </button>
+                </div>
+                <div class="settings-card">
+                    <h3><i class="fas fa-bell"></i> Alert Settings</h3>
+                    <div class="setting-item">
+                        <label>Email Alerts</label>
+                        <label class="switch">
+                            <input type="checkbox" id="email-alerts">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label>Alert Threshold</label>
+                        <select id="alert-threshold">
+                            <option value="warning">Warning Level</option>
+                            <option value="overflow">Overflow Only</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer>Made by @Vaibhav Salve</footer>
+
+    <script src="js/api.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/routeOptimizer.js"></script>
+    <script src="js/visualRouteOptimizer.js"></script>
+</body>
+
+</html>
