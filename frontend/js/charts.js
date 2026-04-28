@@ -57,7 +57,7 @@ class ChartManager {
             data: {
                 labels: ['Normal', 'Warning', 'Overflow'],
                 datasets: [{
-                    data: [data.normalCount || 0, data.warningCount || 0, data.overflowCount || 0],
+                    data: [data.normal || 0, data.warning || 0, data.overflow || 0],
                     backgroundColor: ['#00b894', '#fdcb6e', '#e74c3c'],
                     borderWidth: 0
                 }]

@@ -9,15 +9,17 @@ router.get('/summary', async (req, res) => {
         const last24h = new Date();
         last24h.setHours(last24h.getHours() - 24);
         
-        const recentRecords = await GarbageRecord.find({ timestamp: { $gte: last24h } });
+        const recentRecords = await GarbageRecord.find();
+        // console.log("recernt :",recentRecords);
         
         const currentOverflow = recentRecords.filter(r => r.overflow_status === 2).length;
         const currentWarning = recentRecords.filter(r => r.overflow_status === 1).length;
         const currentNormal = recentRecords.filter(r => r.overflow_status === 0).length;
+        console.log("currentOverflow: ",currentOverflow,"  currentWarning: ",currentWarning,"   currentNormal: ",currentNormal);
         
         // Top critical locations
         const criticalLocations = await GarbageRecord.aggregate([
-            { $match: { overflow_status: 2, timestamp: { $gte: last24h } } },
+            { $match: { overflow_status: 2 } },
             { $group: { _id: '$location', count: { $sum: 1 } } },
             { $sort: { count: -1 } },
             { $limit: 5 }

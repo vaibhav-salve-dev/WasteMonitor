@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = window.location.origin || 'http://localhost:5000';
+const API_BASE_URL = window.location.origin || 'http://localhost:5000/';
 const SOCKET_URL = API_BASE_URL;
 
 // API Service
